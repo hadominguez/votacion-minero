@@ -19,4 +19,4 @@ const blockSchema = new Schema({
 // Crear el modelo
 const Block = mongoose.model('Block', blockSchema);
 
-module.exports = Block;
+module.exports = Block ;

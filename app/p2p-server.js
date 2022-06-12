@@ -3,7 +3,6 @@ const ConfigEnv = require('./config');
 
 const P2P_PORT = ConfigEnv.P2P_PORT || 5000;
 
-//const P2P_PORT = process.env.P2P_PORT || 5001;
 const peers = ConfigEnv.PEERS ? ConfigEnv.PEERS.split(',') : [];
 const MESSAGE_TYPES = {
   chain: 'CHAIN' 

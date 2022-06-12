@@ -1,6 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const Blockchain = require('../blockchain');
+const Blockchain = require('../blockchain/blockchain');
 const P2pServer = require('./p2p-server');
 const Miner = require('./miner');
 const ConfigEnv = require('./config');
@@ -8,6 +8,7 @@ const HTTP_PORT = ConfigEnv.HTTP_PORT || 3000;
 
 const app = express();
 const bc = new Blockchain();
+bc.cargaChain(bc);
 const p2pServer = new P2pServer(bc);
 const miner = new Miner(bc, p2pServer);
 
@@ -56,12 +57,11 @@ app.post('/block', routerControl, (req, res) => {
 });
 
 app.post('/mine', routerControl, (req, res) => {
-  console.log(req);
   p2pServer.syncChains();
   const block = bc.addBlock(req.body.data);
   p2pServer.syncChains();
-  console.log(`Nuevo bloque agregado: ${block.toString()}`);
-  res.redirect('/blocks');
+  console.log(`Nuevo bloque agregado: ${block.toString()}`); 
+  res.json(block);
 });
 
 app.listen(HTTP_PORT, () => console.log(`Escuchando en el puerto ${HTTP_PORT}`));
