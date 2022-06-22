@@ -12,12 +12,12 @@ class Blockchain {
     if(datos.length >= 1){
       var chains =[];
       for(let i=0; i< datos.length; i++){
-        chains.push( new Blockes({_id : datos[i]._id, timestamp: datos[i].timestamp, lastHash: datos[i].lastHash, hash: datos[i].hash, data: datos[i].datas ,difficulty: datos[i].difficulty }) );
+        chains.push( new Blockes({_id : datos[i].hash, timestamp: datos[i].timestamp, lastHash: datos[i].lastHash, hash: datos[i].hash, data: datos[i].data ,difficulty: datos[i].difficulty }) );
       }
       blochain.chain = chains;
     }
 
-    if(!this.chain){
+    if(!this.chain || datos.length < 1){
       var block = Block.genesis();
       blochain.chain = [ block ];
       this.saveBlock(block);
@@ -48,10 +48,18 @@ class Blockchain {
     Blockes.findOne({lastHash: block.lastHash, hash: block.hash}, function (err, datos) {
 
       if(!datos){
-        let bloque = new Blockes({_id : new mongoose.Types.ObjectId, timestamp: block.timestamp, lastHash: block.lastHash, hash: block.hash, data: datas ,difficulty: block.difficulty });
-        bloque.save(function(err){
-          if( err ){ console.log('Error: ', err); return; }
-          console.log("Datos Guardados.");
+        Blockes.findOne({"data.celhash": block.data[0].celhash}, function (err, dato_blocke) {
+
+          console.log(dato_blocke);
+          if(!dato_blocke){
+            console.log("entra");
+            let bloque = new Blockes({_id : block.hash, timestamp: block.timestamp, lastHash: block.lastHash, hash: block.hash, data: datas ,difficulty: block.difficulty });
+            bloque.save(function(err){
+              if( err ){ console.log('Error: ', err); return; }
+              console.log("Datos Guardados.");
+            });
+          }
+
         });
       }
 

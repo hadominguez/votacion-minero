@@ -30,6 +30,7 @@ routerControl.use((req, res, next) => {
 
 
 app.post('/blocks', routerControl, (req, res) => {
+  p2pServer.syncChains();
   res.json(bc.chain);
 });
 
