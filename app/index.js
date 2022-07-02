@@ -37,10 +37,12 @@ app.post('/blocks', routerControl, (req, res) => {
 app.post('/block', routerControl, (req, res) => {
   if (req.body.celhash) {
     let hash_existe = false;
+    var block ;
     for (let i=1; i<bc.chain.length; i++) {
-      const block = bc.chain[i];
-      if (block.data[0].celhash === req.body.celhash) {
+      var blocke = bc.chain[i];
+      if (blocke.data[0].celhash === req.body.celhash) {
         hash_existe = true;
+        block = blocke;
       }
     }
     if (hash_existe === true) {
