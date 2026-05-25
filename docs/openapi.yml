@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: Votacion Minero API
+  version: 2.0.0
+  description: API del nodo minero para votación y sincronización básica.
+servers:
+  - url: http://localhost:3001
+components:
+  schemas:
+    AuthBody:
+      type: object
+      required: [usuario, contrasena]
+      properties:
+        usuario:
+          type: string
+        contrasena:
+          type: string
+    VoteData:
+      type: object
+      required: [celhash]
+      additionalProperties:
+        oneOf:
+          - type: integer
+          - type: string
+      properties:
+        celhash:
+          type: string
+    MineBody:
+      allOf:
+        - $ref: '#/components/schemas/AuthBody'
+        - type: object
+          required: [data]
+          properties:
+            data:
+              $ref: '#/components/schemas/VoteData'
+    BlockQueryBody:
+      allOf:
+        - $ref: '#/components/schemas/AuthBody'
+        - type: object
+          required: [celhash]
+          properties:
+            celhash:
+              type: string
+    HeightBody:
+      allOf:
+        - $ref: '#/components/schemas/AuthBody'
+    BlocksFromBody:
+      allOf:
+        - $ref: '#/components/schemas/AuthBody'
+        - type: object
+          properties:
+            fromHeight:
+              type: integer
+              minimum: -1
+    Block:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        lastHash:
+          type: string
+        hash:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        difficulty:
+          type: integer
+        consensus:
+          type: object
+          additionalProperties: true
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /blocks:
+    post:
+      summary: Obtener cadena completa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthBody'
+      responses:
+        '200':
+          description: Lista de bloques
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Block'
+  /block:
+    post:
+      summary: Obtener bloque por celhash
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlockQueryBody'
+      responses:
+        '200':
+          description: Bloque encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Block'
+        '404':
+          description: No encontrado
+  /tx:
+    post:
+      summary: Enviar transacción de voto a mempool
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MineBody'
+      responses:
+        '202':
+          description: Aceptada
+  /mine-slot:
+    post:
+      summary: Minado por slot/líder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthBody'
+      responses:
+        '201':
+          description: Bloque propuesto/minado
+        '204':
+          description: No hay tx para minar
+        '409':
+          description: Nodo no líder del slot
+  /acks:
+    post:
+      summary: Estado de acks de propuestas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthBody'
+      responses:
+        '200':
+          description: Estado de quorum por bloque
+  /height:
+    post:
+      summary: Altura actual de cadena
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeightBody'
+      responses:
+        '200':
+          description: Altura
+  /blocks-from:
+    post:
+      summary: Bloques desde una altura
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlocksFromBody'
+      responses:
+        '200':
+          description: Bloques faltantes

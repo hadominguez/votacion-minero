@@ -1,0 +1,95 @@
+services:
+  postgres1:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: "useradmin"
+      POSTGRES_PASSWORD: "p4ssw0rd2022"
+      POSTGRES_DB: "blockchain"
+    volumes:
+      - postgres1_data:/var/lib/postgresql/data
+
+  postgres2:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: "useradmin"
+      POSTGRES_PASSWORD: "p4ssw0rd2022"
+      POSTGRES_DB: "blockchain"
+    volumes:
+      - postgres2_data:/var/lib/postgresql/data
+
+  postgres3:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: "useradmin"
+      POSTGRES_PASSWORD: "p4ssw0rd2022"
+      POSTGRES_DB: "blockchain"
+    volumes:
+      - postgres3_data:/var/lib/postgresql/data
+
+  minero1:
+    build: .
+    depends_on: [postgres1]
+    ports: ["3011:3001","5011:5001"]
+    environment:
+      USER_API: "tesisfinal"
+      PASS_API: "t3s15f1n47"
+      USERDB: "useradmin"
+      PASSDB: "p4ssw0rd2022"
+      NAMEDB: "blockchain"
+      HOSTDB: "postgres1"
+      PORTDB: "5432"
+      HTTP_PORT: "3001"
+      P2P_PORT: "5001"
+      PEERS: "ws://minero2:5002,ws://minero3:5003"
+      NODE_ID: "node-1"
+      NODE_LIST: "node-1,node-2,node-3"
+      SLOT_SECONDS: "3"
+      NODE_SECRET: "supersecretcluster"
+      QUORUM_MIN: "2"
+
+  minero2:
+    build: .
+    depends_on: [postgres2]
+    ports: ["3012:3001","5012:5002"]
+    environment:
+      USER_API: "tesisfinal"
+      PASS_API: "t3s15f1n47"
+      USERDB: "useradmin"
+      PASSDB: "p4ssw0rd2022"
+      NAMEDB: "blockchain"
+      HOSTDB: "postgres2"
+      PORTDB: "5432"
+      HTTP_PORT: "3001"
+      P2P_PORT: "5002"
+      PEERS: "ws://minero1:5001,ws://minero3:5003"
+      NODE_ID: "node-2"
+      NODE_LIST: "node-1,node-2,node-3"
+      SLOT_SECONDS: "3"
+      NODE_SECRET: "supersecretcluster"
+      QUORUM_MIN: "2"
+
+  minero3:
+    build: .
+    depends_on: [postgres3]
+    ports: ["3013:3001","5013:5003"]
+    environment:
+      USER_API: "tesisfinal"
+      PASS_API: "t3s15f1n47"
+      USERDB: "useradmin"
+      PASSDB: "p4ssw0rd2022"
+      NAMEDB: "blockchain"
+      HOSTDB: "postgres3"
+      PORTDB: "5432"
+      HTTP_PORT: "3001"
+      P2P_PORT: "5003"
+      PEERS: "ws://minero1:5001,ws://minero2:5002"
+      NODE_ID: "node-3"
+      NODE_LIST: "node-1,node-2,node-3"
+      SLOT_SECONDS: "3"
+      NODE_SECRET: "supersecretcluster"
+      QUORUM_MIN: "2"
+
+volumes:
+  postgres1_data:
+  postgres2_data:
+  postgres3_data:

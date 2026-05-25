@@ -1,6 +1,6 @@
 {
   "name": "minereo",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -15,15 +15,19 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "jest": "^28.1.2",
-    "nodemon": "^2.0.20"
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.14"
   },
   "dependencies": {
-    "body-parser": "^1.18.2",
+    "dotenv": "^16.6.1",
+    "express-rate-limit": "^8.1.0",
     "crypto-js": "^4.2.0",
-    "express": "^4.17.3",
-    "jsonwebtoken": "^9.0.0",
-    "mongoose": "^6.12.3",
-    "ws": "^5.2.4"
+    "express": "^4.22.2",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.16.3",
+    "ws": "^8.21.0",
+    "zod": "^4.1.12"
   }
 }

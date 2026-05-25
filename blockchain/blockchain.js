@@ -1,82 +1,80 @@
-const mongoose = require('mongoose');
-const database = require('./db/database');
 const Block = require('./block');
-const Blockes =  require('./db/blocks');
+const Blocks = require('./db/blocks');
 
 class Blockchain {
-  constructor () {
-  }
+  constructor () {}
 
-  async cargaChain(blochain) {
-    var datos = await Blockes.find({});
-    if(datos.length >= 1){
-      var chains =[];
-      for(let i=0; i< datos.length; i++){
-        chains.push( new Blockes({_id : datos[i].hash, timestamp: datos[i].timestamp, lastHash: datos[i].lastHash, hash: datos[i].hash, data: datos[i].data ,difficulty: datos[i].difficulty }) );
-      }
-      blochain.chain = chains;
+  async cargaChain(blockchain) {
+    const datos = await Blocks.findAll();
+    if (datos.length >= 1) {
+      blockchain.chain = datos.map((item) => ({
+        timestamp: item.timestamp,
+        lastHash: item.lastHash,
+        hash: item.hash,
+        data: item.data,
+        difficulty: item.difficulty,
+        consensus: item.consensus || {}
+      }));
     }
 
-    if(!this.chain || datos.length < 1){
-      var block = Block.genesis();
-      blochain.chain = [ block ];
-      this.saveBlock(block);
+    if (!this.chain || datos.length < 1) {
+      const block = Block.genesis();
+      blockchain.chain = [block];
+      await this.saveBlock(block);
     }
-    return blochain;
+    return blockchain;
   }
 
-  addBlock(data) {
-    let block = Block.mineBlock(this.chain[this.chain.length-1], data);
+  addBlock(data, consensusMeta = {}) {
+    const block = Block.mineBlock(this.chain[this.chain.length - 1], data, consensusMeta);
     this.chain.push(block);
     this.saveBlock(block);
     return block;
   }
 
-  saveBlock(block){
-    console.log(block);
-    var datas;
-    if(block.data.length >= 1){
-      datas = [{
-        celhash : block.data[0].celhash,
-        voto1 : block.data[0].voto1,
-        voto2 : block.data[0].voto2,
-        voto3 : block.data[0].voto3 //,
-        //voto4 : block.data.voto4
-      }];
+  getHeight() {
+    return (this.chain?.length || 1) - 1;
+  }
+
+  getBlocksFromHeight(fromHeight = 0) {
+    const index = Math.max(0, Number(fromHeight) + 1);
+    return (this.chain || []).slice(index);
+  }
+
+  async saveBlock(block) {
+    const datas = Array.isArray(block.data) && block.data.length >= 1 ? [block.data[0]] : [];
+    const existingBlock = await Blocks.findByHashes(block.lastHash, block.hash);
+    if (existingBlock) return;
+
+    const celhash = block.data?.[0]?.celhash;
+    if (celhash) {
+      const duplicateByCelhash = await Blocks.findByCelhash(celhash);
+      if (duplicateByCelhash) return;
     }
 
-    Blockes.findOne({lastHash: block.lastHash, hash: block.hash}, function (err, datos) {
-
-      if(!datos){
-        Blockes.findOne({"data.celhash": block.data[0].celhash}, function (err, dato_blocke) {
-
-          console.log(dato_blocke);
-          if(!dato_blocke){
-            console.log("entra");
-            let bloque = new Blockes({_id : block.hash, timestamp: block.timestamp, lastHash: block.lastHash, hash: block.hash, data: datas ,difficulty: block.difficulty });
-            bloque.save(function(err){
-              if( err ){ console.log('Error: ', err); return; }
-              console.log("Datos Guardados.");
-            });
-          }
-
-        });
-      }
-
-    });
-    
-
+    try {
+      await Blocks.insert({
+        hash: block.hash,
+        lastHash: block.lastHash,
+        timestamp: block.timestamp,
+        data: datas,
+        difficulty: block.difficulty,
+        consensus: block.consensus || {}
+      });
+    } catch (error) {
+      if (error && error.code === '23505') return;
+      throw error;
+    }
   }
 
   isValidChain(chain) {
-    if(JSON.stringify(chain[0]) !== JSON.stringify(Block.genesis())) return false;
+    if (JSON.stringify(chain[0]) !== JSON.stringify(Block.genesis())) return false;
 
-    for (let i=1; i<chain.length; i++) {
-      const block = chain[i];
-      const lastBlock = chain[i-1];
+    for (let index = 1; index < chain.length; index += 1) {
+      const block = chain[index];
+      const lastBlock = chain[index - 1];
 
-      if (block.lastHash !== lastBlock.hash ||
-          block.hash !== Block.blockHash(block)) {
+      if (block.lastHash !== lastBlock.hash || block.hash !== Block.blockHash(block)) {
         return false;
       }
     }
@@ -85,27 +83,25 @@ class Blockchain {
   }
 
   replaceChain(newChain) {
-    if(newChain){
+    if (!newChain) return;
 
-      if(this.chain){
-        if (newChain.length <= this.chain.length) {
-          console.log('La cadena recibida no es más larga que la cadena actual.');
-          return;
-        } else if (!this.isValidChain(newChain)) {
-          console.log('La cadena recibida no es valida.');
-          return;
-        }
+    if (this.chain) {
+      if (newChain.length <= this.chain.length) {
+        console.log('La cadena recibida no es más larga que la cadena actual.');
+        return;
       }
-
-      for (let i=1; i<newChain.length; i++) {
-        let block = newChain[i];
-        this.saveBlock(block);
+      if (!this.isValidChain(newChain)) {
+        console.log('La cadena recibida no es valida.');
+        return;
       }
-
-      console.log('Reemplazo de blockchain con la nueva cadena.');
-      this.chain = newChain;
-
     }
+
+    for (let index = 1; index < newChain.length; index += 1) {
+      this.saveBlock(newChain[index]);
+    }
+
+    console.log('Reemplazo de blockchain con la nueva cadena.');
+    this.chain = newChain;
   }
 }
 

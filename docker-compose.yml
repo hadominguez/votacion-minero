@@ -1,0 +1,38 @@
+services:
+  minero:
+    build: .
+    container_name: votacion-minero
+    depends_on:
+      - postgres
+    ports:
+      - "3001:3001"
+      - "5001:5001"
+    environment:
+      DIFFICULTY: "1"
+      HTTP_PORT: "3001"
+      P2P_PORT: "5001"
+      PEERS: ""
+      USER_API: "tesisfinal"
+      PASS_API: "t3s15f1n47"
+      USERDB: "useradmin"
+      PASSDB: "p4ssw0rd2022"
+      NAMEDB: "blockchain"
+      HOSTDB: "postgres"
+      PORTDB: "5432"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: votacion-minero-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "useradmin"
+      POSTGRES_PASSWORD: "p4ssw0rd2022"
+      POSTGRES_DB: "blockchain"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

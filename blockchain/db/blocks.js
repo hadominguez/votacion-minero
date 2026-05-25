@@ -1,22 +1,45 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const { pool } = require('./database');
 
-const blockSchema = new Schema({
-    _id: String,
-    timestamp : Date,
-    lastHash : String,
-    hash : String,
-    data : [{
-        celhash : String,
-        voto1 : Number,
-        voto2 : Number,
-        voto3 : Number //,
-        //voto4 : Number
-  }],
-  difficulty : Number
+const mapRowToBlock = (row) => ({
+  hash: row.hash,
+  lastHash: row.last_hash,
+  timestamp: row.timestamp,
+  data: row.data,
+  difficulty: row.difficulty,
+  consensus: row.consensus
 });
 
-// Crear el modelo
-const Block = mongoose.model('Block', blockSchema);
+const findAll = async () => {
+  const result = await pool.query('SELECT hash, last_hash, timestamp, data, difficulty, consensus FROM blocks ORDER BY id ASC');
+  return result.rows.map(mapRowToBlock);
+};
 
-module.exports = Block ;
+const findByHashes = async (lastHash, hash) => {
+  const result = await pool.query(
+    'SELECT hash FROM blocks WHERE last_hash = $1 AND hash = $2 LIMIT 1',
+    [lastHash, hash]
+  );
+  return result.rows[0] || null;
+};
+
+const findByCelhash = async (celhash) => {
+  const result = await pool.query(
+    "SELECT hash FROM blocks WHERE data->0->>'celhash' = $1 LIMIT 1",
+    [celhash]
+  );
+  return result.rows[0] || null;
+};
+
+const insert = async ({ hash, lastHash, timestamp, data, difficulty, consensus }) => {
+  await pool.query(
+    'INSERT INTO blocks (hash, last_hash, timestamp, data, difficulty, consensus) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (hash) DO NOTHING',
+    [hash, lastHash, timestamp, JSON.stringify(data), difficulty, JSON.stringify(consensus || {})]
+  );
+};
+
+module.exports = {
+  findAll,
+  findByHashes,
+  findByCelhash,
+  insert
+};
